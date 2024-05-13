@@ -34,7 +34,7 @@ public class ProductRestController {
     }
 
     @GetMapping("/search")
-    public List<Product> searchProducts(@RequestParam String keyword) {
-        return productService.findByNameContaining(keyword);
+    public List<Product> searchProducts(@RequestParam("name") String name) {
+        return productService.findByNameContaining(name);
     }
 }

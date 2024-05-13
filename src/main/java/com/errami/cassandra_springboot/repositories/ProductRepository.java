@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ProductRepository extends CassandraRepository<Product, UUID> {
-    @Query("SELECT * FROM products WHERE name LIKE %:keyword%")
-    List<Product> findByNameContaining(@Param("keyword") String keyword);
+    @Query("SELECT * FROM products WHERE name=?0 ALLOW FILTERING")
+    List<Product> findByNameContaining(String name);
 }

@@ -28,7 +28,7 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    public List<Product> findByNameContaining(String keyword) {
-        return productRepository.findByNameContaining(keyword);
+    public List<Product> findByNameContaining(String name) {
+        return productRepository.findByNameContaining(name);
     }
 }
