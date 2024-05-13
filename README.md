@@ -68,8 +68,8 @@ public class Product implements Serializable {
 Code source :
 ```java
 public interface ProductRepository extends CassandraRepository<Product, UUID> {
-    @Query("SELECT * FROM products WHERE name LIKE %:keyword%")
-    List<Product> findByNameContaining(@Param("keyword") String keyword);
+   @Query("SELECT * FROM products WHERE name=?0 ALLOW FILTERING")
+   List<Product> findByNameContaining(String name);
 }
 ```
 
@@ -97,9 +97,9 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    public List<Product> findByNameContaining(String keyword) {
-        return productRepository.findByNameContaining(keyword);
-    }
+   public List<Product> findByNameContaining(String name) {
+      return productRepository.findByNameContaining(name);
+   }
 }
 ```
 
@@ -133,8 +133,8 @@ public class ProductRestController {
     }
 
     @GetMapping("/search")
-    public List<Product> searchProducts(@RequestParam String keyword) {
-        return productService.findByNameContaining(keyword);
+    public List<Product> searchProducts(@RequestParam("name") String name) {
+       return productService.findByNameContaining(name);
     }
 }
 ```
