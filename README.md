@@ -1,162 +1,145 @@
-# Manipulation d'une base de donnée cassandra avec Spring Boot Application
+# Project: Managing an Ecommerce Keystore with Spring Boot and Cassandra
 
-## Objectif
+## Introduction
 
-L'objectif de ce travail est de manipuler une base de données Cassanda à partir d'une application Spring Boot, pour gérer un keystore nommé ecommerce qui va contenir une table products.
+The objective of this project is to create a Spring Boot application that manipulates a Cassandra database to manage a keystore named "ecommerce". This keystore contains a table "products" that stores product information. The project includes several elements: a `Product` entity, a `ProductRepository` repository, a service layer, a REST controller, and CRUD operation tests with Postman.
 
-## Structure du projet
+## Steps of Implementation
 
-```
-   src
-    ├───main
-    │   ├───java
-    │   │   └───com
-    │   │       └───errami
-    │   │           └───cassandra_springboot
-    │   │               ├───entities
-    │   │                     Product
-    │   │               ├───repositories
-    │   │                     ProductRepository
-    │   │               ├───services
-    │   │                     ProductService
-    │   │               └───web
-    │   │                     ProductController
-    │   │
-    │   └───resources
-    └───test
-        └───java
-```
+### 1. Creating the Product Entity
 
-## Travail à faire
+The `Product` entity represents the `products` table in the Cassandra database. It contains the following attributes:
+- `id`: UUID
+- `name`: String
+- `price`: double
+- `quantiteStock`: int
 
-1. Créer un keyspace ecommerce dans Cassandra
-2. Créer une table products avec les colonnes suivantes:
-   - id: UUID
-   - name: Text
-   - price: Double
-   - quantity: Int
-
-3. Créer une application Spring Boot.
-4. Créer une entité Product pour réaliser les opérations d'accès à la  base données.
-5. Créer un repository ProductRepository
-6. Créer un service ProductService qui réalise les opérations CRUD de base et donne la possibilité de chercher des produits par mot clé.
-7. Créer un controller ProductController qui expose les diffirentes fonctionlités de l'application.
-8. Tester les opérations avec un outil comme Postman.
-
-## La tâche 1 & 2
-
-![img1.png](assets/img1.png)
-
-## La tâche 4
-Code source :
 ```java
-@Table("products")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Product implements Serializable {
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.Table;
+
+import java.util.UUID;
+
+@Table
+public class Product {
+    
     @PrimaryKey
     private UUID id;
     private String name;
     private double price;
     private int quantiteStock;
+    
+    // Getters and Setters
 }
 ```
+### 2. Creating the ProductRepository
 
-## La tâche 5
-Code source :
+The ProductRepository allows performing database access operations. It extends the CassandraRepository interface provided by Spring Data Cassandra.
 ```java
+import org.springframework.data.cassandra.repository.CassandraRepository;
+import java.util.UUID;
+
 public interface ProductRepository extends CassandraRepository<Product, UUID> {
-   @Query("SELECT * FROM products WHERE name=?0 ALLOW FILTERING")
-   List<Product> findByNameContaining(String name);
+    List<Product> findByNameContaining(String keyword);
 }
 ```
 
-## La tâche 6
-Code source :
+### 3. Creating the Service Layer
+
+The service layer implements CRUD operations and search by keyword. It uses the ProductRepository to interact with the database.
 ```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 @Service
-@AllArgsConstructor
 public class ProductService {
+
+    @Autowired
     private ProductRepository productRepository;
 
-    public Product save(Product product) {
-        return productRepository.save(product);
-    }
-
-    public List<Product> getAllProducts(){
+    public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-    public Product getProductById(UUID uuid){
-        return productRepository.findById(uuid).get();
+    public Optional<Product> getProductById(UUID id) {
+        return productRepository.findById(id);
     }
 
-    public void deleteById(UUID id) {
+    public Product saveProduct(Product product) {
+        product.setId(UUID.randomUUID());
+        return productRepository.save(product);
+    }
+
+    public void deleteProduct(UUID id) {
         productRepository.deleteById(id);
     }
 
-   public List<Product> findByNameContaining(String name) {
-      return productRepository.findByNameContaining(name);
-   }
+    public List<Product> searchProductsByName(String keyword) {
+        return productRepository.findByNameContaining(keyword);
+    }
 }
+
 ```
 
-## La tâche 7
-Code source :
+### 4. Creating the REST Controller
+
+The REST controller exposes the different functionalities of the application via HTTP endpoints.
 ```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 @RestController
-@AllArgsConstructor
-@RequestMapping("/products")
-public class ProductRestController {
+@RequestMapping("/api/products")
+public class ProductController {
+
+    @Autowired
     private ProductService productService;
 
-    @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return productService.save(product);
-    }
-
     @GetMapping
-    public List<Product> getAllProducts(){
+    public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable UUID id){
+    public Optional<Product> getProductById(@PathVariable UUID id) {
         return productService.getProductById(id);
     }
 
+    @PostMapping
+    public Product createProduct(@RequestBody Product product) {
+        return productService.saveProduct(product);
+    }
+
     @DeleteMapping("/{id}")
-    public void deleteProductById(@PathVariable UUID id) {
-        productService.deleteById(id);
+    public void deleteProduct(@PathVariable UUID id) {
+        productService.deleteProduct(id);
     }
 
     @GetMapping("/search")
-    public List<Product> searchProducts(@RequestParam("name") String name) {
-       return productService.findByNameContaining(name);
+    public List<Product> searchProducts(@RequestParam String keyword) {
+        return productService.searchProductsByName(keyword);
     }
 }
+
 ```
 
-## La tâche 8
+### 5. Testing the Operations with Postman
 
-- **Récuperer tous les produits :**
+To test the various CRUD operations, we used Postman. Here are some example requests:
 
-![img2.png](assets/img2.png)
+    GET /api/products: Retrieves all products
+    GET /api/products/{id}: Retrieves a product by its ID
+    POST /api/products: Creates a new product
+    DELETE /api/products/{id}: Deletes a product by its ID
+    GET /api/products/search?keyword=example: Searches for products by keyword
 
-- **Récuperer un produit par son id :**
 
-![img3.png](assets/img3.png)
 
-- **Créer un produit :**
-
-![img4.png](assets/img4.png)
-
-- **Supprimer un produit par son id :**
-
-![img5.png](assets/img5.png)
-
-- **Rechercher un produit par mot clé (nom) :**
-
-![img6.png](assets/img6.png)

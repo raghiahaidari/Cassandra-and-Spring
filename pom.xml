@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.errami</groupId>
-	<artifactId>Cassandra_SpringBoot</artifactId>
+	<artifactId>CassandraSpringBoot</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Cassandra_SpringBoot</name>
 	<description>Cassandra_SpringBoot</description>
